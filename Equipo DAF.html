@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flujo Interactivo DAF</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: "Calm Harmony" - Neutral grays, a professional blue, and a touch of teal for accents. -->
+    <!-- Application Structure Plan: A single-page, scrollable application with a sticky navigation bar for quick access to key sections: "Misión", "Roles", "Flujo", "Beneficios", and "Próximos Pasos". The core of the application is an interactive "Roles" section where users can click to toggle between team members' responsibilities. This is more engaging than static slides. The workflow is visualized with a custom HTML/CSS diagram instead of a static image, and a bonus chart provides company-wide context. This structure enhances exploration and understanding by transforming a linear presentation into an interactive dashboard. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Role descriptions for Mauricio, Juanita, Practicante. -> Goal: Inform & Compare. -> Viz/Method: Interactive cards (HTML/CSS/JS). -> Interaction: Click on a role button to display their detailed card. -> Justification: Allows for focused viewing and easy comparison between roles.
+        - Report Info: Workflow diagram. -> Goal: Organize & Show Relationships. -> Viz/Method: Custom HTML/CSS flowchart. -> Interaction: Hover effects on each step. -> Justification: More engaging and web-native than a static image or Mermaid diagram.
+        - Report Info: Company team sizes. -> Goal: Provide Context. -> Viz/Method: Donut Chart (Chart.js/Canvas). -> Interaction: Tooltips on hover. -> Justification: Adds a quantitative, data-driven visualization to contextualize the DAF team's role.
+        - Report Info: Benefits & Next Steps. -> Goal: Inform & Motivate. -> Viz/Method: Styled lists with icons (HTML/CSS). -> Interaction: None. -> Justification: Clear, scannable lists are most effective for this information. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .nav-link {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .nav-link:hover {
+            color: #0369a1; /* sky-700 */
+            transform: translateY(-2px);
+        }
+        .role-card {
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+            will-change: opacity, transform;
+        }
+        .hidden-role {
+            opacity: 0;
+            transform: scale(0.95);
+            position: absolute;
+            pointer-events: none;
+        }
+        .visible-role {
+            opacity: 1;
+            transform: scale(1);
+            position: static;
+        }
+        .role-button.active {
+            background-color: #0369a1; /* sky-700 */
+            color: white;
+        }
+        .flow-step {
+            transition: all 0.3s ease;
+        }
+        .flow-step:hover {
+            transform: translateY(-4px) scale(1.03);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .flow-arrow {
+            position: relative;
+            height: 4rem;
+            width: 2px;
+            background-color: #9ca3af;
+            margin: 0.5rem auto;
+        }
+        .flow-arrow::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 8px solid #9ca3af;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-700">
+
+    <header class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-50">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-slate-800">Engranajes del Éxito DAF</h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a onclick="scrollToSection('mision')" class="nav-link text-slate-600 font-medium px-3 py-2 rounded-md text-sm">Misión</a>
+                        <a onclick="scrollToSection('roles')" class="nav-link text-slate-600 font-medium px-3 py-2 rounded-md text-sm">Roles</a>
+                        <a onclick="scrollToSection('flujo')" class="nav-link text-slate-600 font-medium px-3 py-2 rounded-md text-sm">Flujo de Trabajo</a>
+                        <a onclick="scrollToSection('beneficios')" class="nav-link text-slate-600 font-medium px-3 py-2 rounded-md text-sm">Beneficios</a>
+                        <a onclick="scrollToSection('pasos')" class="nav-link text-slate-600 font-medium px-3 py-2 rounded-md text-sm">Próximos Pasos</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        
+        <section id="mision" class="text-center py-16">
+            <h2 class="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">Nuestra Misión Compartida</h2>
+            <p class="mt-6 max-w-3xl mx-auto text-lg text-slate-600">
+                Lograr un ciclo administrativo y financiero **impecable, ágil y transparente** que brinde soporte efectivo a todas las áreas de la empresa, manteniendo la salud financiera y gestionando eficientemente a nuestro equipo.
+            </p>
+        </section>
+
+        <section id="roles" class="py-16">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold text-slate-900">Piezas del Engranaje DAF</h2>
+                <p class="mt-4 max-w-2xl mx-auto text-md text-slate-600">Cada rol es fundamental para el éxito del equipo. Haz clic en cada nombre para explorar sus responsabilidades y cómo nos conectamos.</p>
+            </div>
+
+            <div class="mt-12">
+                <div class="flex justify-center space-x-2 sm:space-x-4 border-b border-slate-200 pb-4">
+                    <button id="btn-practicante" class="role-button px-4 py-2 text-sm sm:text-base font-medium rounded-md transition duration-300" onclick="showRole('practicante')">
+                        <span>&#128187;</span> Practicante
+                    </button>
+                    <button id="btn-juanita" class="role-button px-4 py-2 text-sm sm:text-base font-medium rounded-md transition duration-300" onclick="showRole('juanita')">
+                        <span>&#128200;</span> Juanita
+                    </button>
+                    <button id="btn-mauricio" class="role-button px-4 py-2 text-sm sm:text-base font-medium rounded-md transition duration-300" onclick="showRole('mauricio')">
+                        <span>&#128100;</span> Mauricio
+                    </button>
+                </div>
+                
+                <div id="roles-container" class="mt-8 relative min-h-[450px]">
+                    <div id="practicante" class="role-card">
+                        <div class="bg-white rounded-xl shadow-lg p-8">
+                            <h3 class="text-2xl font-bold text-sky-700">El Preparador Esencial</h3>
+                            <p class="mt-2 text-slate-600 font-medium">Misión: Asegurar que toda la información administrativa y financiera esté lista, ordenada y accesible para que el proceso fluya sin contratiempos.</p>
+                            <div class="mt-6 grid md:grid-cols-2 gap-6">
+                                <div>
+                                    <h4 class="font-semibold text-slate-800 border-b pb-2">Funciones Principales</h4>
+                                    <ul class="mt-3 space-y-2 list-disc list-inside text-slate-600">
+                                        <li>Recepción y digitalización de facturas.</li>
+                                        <li>Cotejo inicial de guías vs. OC.</li>
+                                        <li>Ingreso de datos en sistemas y cuadros de control.</li>
+                                        <li>Archivo físico y digital (Google Drive).</li>
+                                        <li>Apoyo en envío de recordatorios de pago.</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-slate-800 border-b pb-2">Dependencias Cruciales</h4>
+                                    <ul class="mt-3 space-y-2 list-disc list-inside text-slate-600">
+                                        <li><strong class="text-slate-800">Recibe de Juanita:</strong> Guía, supervisión y delegación de tareas.</li>
+                                        <li><strong class="text-slate-800">Impacta a Juanita:</strong> Su eficiencia es la base para la agilidad de Juanita.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="juanita" class="role-card hidden-role">
+                        <div class="bg-white rounded-xl shadow-lg p-8">
+                            <h3 class="text-2xl font-bold text-sky-700">La Ejecutora Dinámica</h3>
+                            <p class="mt-2 text-slate-600 font-medium">Misión: Convertir la información organizada en acciones concretas y resultados medibles. Es el motor operativo del DAF.</p>
+                            <div class="mt-6 grid md:grid-cols-2 gap-6">
+                                <div>
+                                    <h4 class="font-semibold text-slate-800 border-b pb-2">Funciones Principales</h4>
+                                    <ul class="mt-3 space-y-2 list-disc list-inside text-slate-600">
+                                        <li>Gestión integral de Cuentas por Pagar.</li>
+                                        <li>Gestión integral de Cuentas por Cobrar.</li>
+                                        <li>Mantenimiento de registros clave (OC, factoring).</li>
+                                        <li>Cuadratura de guías y facturas.</li>
+                                        <li>Generación de reportes operativos.</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-slate-800 border-b pb-2">Dependencias Cruciales</h4>
+                                    <ul class="mt-3 space-y-2 list-disc list-inside text-slate-600">
+                                        <li><strong class="text-slate-800">Recibe del Practicante:</strong> Información organizada.</li>
+                                        <li><strong class="text-slate-800">Recibe de Mauricio:</strong> Aprobaciones finales.</li>
+                                        <li><strong class="text-slate-800">Impacta a Mauricio:</strong> Su trabajo es la base para la supervisión.</li>
+                                        <li><strong class="text-slate-800">Impacta al Practicante:</strong> Supervisa y valida su apoyo.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="mauricio" class="role-card hidden-role">
+                        <div class="bg-white rounded-xl shadow-lg p-8">
+                            <h3 class="text-2xl font-bold text-sky-700">El Supervisor Estratégico y Gestor Integral</h3>
+                            <p class="mt-2 text-slate-600 font-medium">Misión: Asegurar la correcta ejecución y control financiero, la dirección estratégica, la implementación de procedimientos y la gestión integral de RRHH.</p>
+                            <div class="mt-6 grid lg:grid-cols-3 gap-6">
+                                <div>
+                                    <h4 class="font-semibold text-slate-800 border-b pb-2">Supervisión Financiera</h4>
+                                    <ul class="mt-3 space-y-2 list-disc list-inside text-slate-600">
+                                        <li>Supervisa procesos de pago y facturación.</li>
+                                        <li>Control y seguimiento de IVA.</li>
+                                        <li>Aprueba pagos y emisión de facturas.</li>
+                                        <li>Monitorea OC y metas de cobranza.</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-slate-800 border-b pb-2">Gestión de RRHH y Estrategia</h4>
+                                    <ul class="mt-3 space-y-2 list-disc list-inside text-slate-600">
+                                        <li>Responsable de todos los procesos de RRHH.</li>
+                                        <li>Implementa y mejora procedimientos.</li>
+                                        <li>Coordina con Contabilidad y otras áreas.</li>
+                                    </ul>
+                                </div>
+                                 <div>
+                                    <h4 class="font-semibold text-slate-800 border-b pb-2">Dependencias Cruciales</h4>
+                                    <ul class="mt-3 space-y-2 list-disc list-inside text-slate-600">
+                                        <li><strong class="text-slate-800">Recibe de Juanita:</strong> Reportes y solicitudes para aprobación.</li>
+                                        <li><strong class="text-slate-800">Impacta a Juanita:</strong> Sus directrices finalizan procesos clave.</li>
+                                        <li><strong class="text-slate-800">Impacta a toda la Empresa:</strong> Vía gestión de RRHH y estabilidad financiera.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="flujo" class="py-16 bg-slate-100 rounded-2xl">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold text-slate-900">Visualizando Nuestras Conexiones</h2>
+                <p class="mt-4 max-w-2xl mx-auto text-md text-slate-600">Este es nuestro flujo de trabajo simplificado. Cada etapa es un paso crítico que depende de la anterior. Pasa el cursor sobre cada paso para destacarlo.</p>
+            </div>
+            <div class="mt-12 flex flex-col items-center">
+                <div class="flow-step w-full max-w-sm bg-white p-4 rounded-lg shadow text-center">
+                    <p class="font-semibold text-slate-800">Documentos Externos / Solicitudes</p>
+                    <p class="text-sm text-slate-500">Facturas, Órdenes de Compra, etc.</p>
+                </div>
+                <div class="flow-arrow"></div>
+                <div class="flow-step w-full max-w-sm bg-white p-4 rounded-lg shadow text-center">
+                    <p class="font-semibold text-sky-700">Practicante: Recepción y Organización</p>
+                    <p class="text-sm text-slate-500">Recibe, digitaliza e ingresa datos iniciales.</p>
+                </div>
+                <div class="flow-arrow"></div>
+                <div class="flow-step w-full max-w-sm bg-white p-4 rounded-lg shadow text-center">
+                    <p class="font-semibold text-sky-700">Juanita: Procesamiento y Gestión</p>
+                    <p class="text-sm text-slate-500">Emite facturas, prepara pagos, genera reportes.</p>
+                </div>
+                 <div class="flow-arrow"></div>
+                <div class="flow-step w-full max-w-sm bg-white p-4 rounded-lg shadow text-center">
+                    <p class="font-semibold text-sky-700">Mauricio: Supervisión y Aprobación</p>
+                    <p class="text-sm text-slate-500">Valida, aprueba, gestiona RRHH, dirige.</p>
+                </div>
+                 <div class="flow-arrow"></div>
+                 <div class="flow-step w-full max-w-sm bg-teal-500 text-white p-4 rounded-lg shadow text-center">
+                    <p class="font-semibold">Resultado Final</p>
+                    <p class="text-sm text-teal-100">Pago realizado, factura enviada, proceso completado.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="equipo-contexto" class="py-16">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold text-slate-900">Nuestro Equipo en Contexto</h2>
+                <p class="mt-4 max-w-2xl mx-auto text-md text-slate-600">El DAF es el núcleo que apoya a toda la organización. Este gráfico muestra cómo nos distribuimos.</p>
+            </div>
+            <div class="mt-8 chart-container relative h-80 w-full max-w-md mx-auto">
+                <canvas id="teamChart"></canvas>
+            </div>
+        </section>
+
+
+        <section id="beneficios" class="py-16">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold text-slate-900">¿Qué Ganamos Como Equipo y Empresa?</h2>
+            </div>
+            <div class="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-md bg-sky-600 text-white">
+                            <span>🎯</span>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <h4 class="text-lg leading-6 font-medium text-slate-900">Claridad Total</h4>
+                        <p class="mt-2 text-base text-slate-600">Cada miembro sabe qué hacer, cómo y cuándo, reduciendo la confusión y duplicidad.</p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-md bg-sky-600 text-white">
+                           <span>⏱️</span>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <h4 class="text-lg leading-6 font-medium text-slate-900">Mayor Agilidad</h4>
+                        <p class="mt-2 text-base text-slate-600">Procesos financieros y administrativos más fluidos y rápidos, eliminando cuellos de botella.</p>
+                    </div>
+                </div>
+                 <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-md bg-sky-600 text-white">
+                           <span>💪</span>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <h4 class="text-lg leading-6 font-medium text-slate-900">Optimización del Tiempo</h4>
+                        <p class="mt-2 text-base text-slate-600">Cada rol se enfoca en sus tareas de mayor impacto, desde la operación hasta la estrategia y RRHH.</p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-md bg-sky-600 text-white">
+                           <span>🌱</span>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <h4 class="text-lg leading-6 font-medium text-slate-900">Desarrollo Continuo</h4>
+                        <p class="mt-2 text-base text-slate-600">Se crean oportunidades de aprendizaje y mejora constante en todos los niveles.</p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-md bg-sky-600 text-white">
+                           <span>✅</span>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <h4 class="text-lg leading-6 font-medium text-slate-900">Reducción de Errores</h4>
+                        <p class="mt-2 text-base text-slate-600">Los puntos de control claros disminuyen la probabilidad de fallos financieros y administrativos.</p>
+                    </div>
+                </div>
+                 <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-md bg-sky-600 text-white">
+                           <span>👥</span>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <h4 class="text-lg leading-6 font-medium text-slate-900">Soporte Integral</h4>
+                        <p class="mt-2 text-base text-slate-600">Un DAF eficiente y una gestión de RRHH centralizada benefician a toda la organización.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="pasos" class="py-16">
+            <div class="bg-slate-800 rounded-2xl p-8 md:p-12 text-center">
+                 <h2 class="text-3xl font-bold text-white">Del Dicho al Hecho: Nuestro Plan de Acción</h2>
+                 <div class="mt-8 max-w-4xl mx-auto text-left grid md:grid-cols-2 gap-8">
+                    <div class="bg-slate-700 p-6 rounded-lg">
+                        <p class="text-lg font-semibold text-white">1. Validación y Ajuste Fino (Hoy)</p>
+                        <p class="mt-2 text-slate-300">¿Estamos de acuerdo con este flujo? Ajustemos los detalles finales juntos.</p>
+                    </div>
+                    <div class="bg-slate-700 p-6 rounded-lg">
+                        <p class="text-lg font-semibold text-white">2. Documentación (Próxima Semana)</p>
+                        <p class="mt-2 text-slate-300">Formalizar los procedimientos clave DAF y de interacción con RRHH. Responsable: Mauricio, con apoyo de Juanita.</p>
+                    </div>
+                    <div class="bg-slate-700 p-6 rounded-lg">
+                        <p class="text-lg font-semibold text-white">3. Comunicación Reforzada (Continuo)</p>
+                        <p class="mt-2 text-slate-300">Implementar reunión semanal DAF (15 min) y establecer canales claros para consultas de RRHH.</p>
+                    </div>
+                    <div class="bg-slate-700 p-6 rounded-lg">
+                        <p class="text-lg font-semibold text-white">4. Métricas Clave (Próximo Mes)</p>
+                        <p class="mt-2 text-slate-300">Definir 1-2 indicadores para medir la efectividad (ej. tiempo de procesamiento de facturas).</p>
+                    </div>
+                 </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-800">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 text-center text-slate-400 text-sm">
+            <p>&copy; 2025 Engranajes del Éxito DAF. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script>
+        function scrollToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        const roles = ['practicante', 'juanita', 'mauricio'];
+        const roleButtons = {
+            practicante: document.getElementById('btn-practicante'),
+            juanita: document.getElementById('btn-juanita'),
+            mauricio: document.getElementById('btn-mauricio'),
+        };
+        const roleCards = {
+            practicante: document.getElementById('practicante'),
+            juanita: document.getElementById('juanita'),
+            mauricio: document.getElementById('mauricio'),
+        };
+
+        function showRole(roleId) {
+            roles.forEach(role => {
+                const isCurrentRole = role === roleId;
+                roleCards[role].classList.toggle('visible-role', isCurrentRole);
+                roleCards[role].classList.toggle('hidden-role', !isCurrentRole);
+                roleButtons[role].classList.toggle('active', isCurrentRole);
+                roleButtons[role].classList.toggle('bg-slate-200', !isCurrentRole);
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            showRole('practicante');
+
+            const ctx = document.getElementById('teamChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Administración (DAF)', 'Operaciones', 'Ventas'],
+                    datasets: [{
+                        label: 'Composición del Equipo',
+                        data: [2, 7, 4],
+                        backgroundColor: [
+                            '#0369a1', // sky-700
+                            '#0f766e', // teal-700
+                            '#64748b', // slate-500
+                        ],
+                        borderColor: '#f8fafc', // slate-50
+                        borderWidth: 4,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#334155', // slate-700
+                                font: {
+                                    size: 14,
+                                    family: "'Inter', sans-serif"
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += context.raw + ' personas';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
